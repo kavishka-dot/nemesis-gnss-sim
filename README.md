@@ -13,7 +13,6 @@ iq = sim.generate_iq(duration_ms=1000.0)   # complex128 at 4.092 MHz
 ```
 
 ---
-<img width="2474" height="951" alt="image" src="https://github.com/user-attachments/assets/97a6d05a-fa5c-459b-8efe-21fc370f5eb0" />
 
 ## Features
 
@@ -25,6 +24,13 @@ iq = sim.generate_iq(duration_ms=1000.0)   # complex128 at 4.092 MHz
 - Neill Mapping Function troposphere + GPT standard atmosphere (seasonal, latitude-dependent)
 - Correct C/A Gold code generation for all 32 PRNs (IS-GPS-200 Table 3-Ia)
 - BPSK(1) baseband IQ synthesis at arbitrary sample rate
+
+**Ephemeris sources — your choice**
+
+| Mode | How | When to use |
+|---|---|---|
+| `embedded` | Built-in 31-SV almanac, zero setup | Training data, Colab, offline use |
+| `rinex` | Real broadcast ephemeris from RINEX 2/3 file | Paper validation, geodetic accuracy |
 
 **Attack classes (NEMESIS taxonomy)**
 
@@ -66,7 +72,7 @@ from nemesis_sim import NEMESISSimulator
 
 ## Quick Start
 
-### Generate all four IQ files
+### Embedded mode (default — works anywhere)
 
 ```python
 from nemesis_sim import NEMESISSimulator, AttackConfig
@@ -89,21 +95,111 @@ for label, cfg in [
     save_int16(iq, f"{label}.bin")
 ```
 
-### CLI
+### RINEX mode (real broadcast ephemeris)
+
+Download a daily RINEX navigation file from [NASA CDDIS](https://cddis.nasa.gov/archive/gnss/data/daily/)
+or [IGS](https://igs.bkg.bund.de/):
+
+```python
+from nemesis_sim import NEMESISSimulator
+
+sim = NEMESISSimulator(
+    lat_deg=6.9271, lon_deg=79.8612, alt_m=10.0,
+    gps_tow=388800.0,
+    rinex_path="BRDC00IGS_R_20251200000_01D_MN.rnx",   # RINEX 2 or 3
+)
+sim.compute_truth()
+iq = sim.generate_iq(duration_ms=1000.0)
+```
+
+---
+
+## CLI
 
 ```bash
-# Clearsky
+# Embedded mode (default)
 nemesis-sim --lat 6.9271 --lon 79.8612 --out clearsky.bin
 
-# Meaconing (100 µs delay)
-nemesis-sim --lat 6.9271 --lon 79.8612 --attack meaconing --meacon-delay 1e-4 --out meaconing.bin
+# RINEX mode
+nemesis-sim --lat 6.9271 --lon 79.8612 \
+            --ephemeris rinex --rinex-file BRDC00IGS_R_20251200000_01D_MN.rnx \
+            --out clearsky_rinex.bin
+
+# Meaconing attack (100 µs delay)
+nemesis-sim --lat 6.9271 --lon 79.8612 \
+            --attack meaconing --meacon-delay 1e-4 \
+            --out meaconing.bin
 
 # Slow drift (2 m/s)
-nemesis-sim --lat 6.9271 --lon 79.8612 --attack slow_drift --drift-rate 2.0 --out drift.bin
+nemesis-sim --lat 6.9271 --lon 79.8612 \
+            --attack slow_drift --drift-rate 2.0 \
+            --out drift.bin
 
 # Adversarial (false position 27 km away)
-nemesis-sim --lat 6.9271 --lon 79.8612 --attack adversarial \
-            --false-lat 7.2 --false-lon 80.1 --out adversarial.bin
+nemesis-sim --lat 6.9271 --lon 79.8612 \
+            --attack adversarial --false-lat 7.2 --false-lon 80.1 \
+            --out adversarial.bin
+```
+
+**CLI output:**
+```
+  _   _ _____ __  __ _____ ____ ___ ____
+ | \ | | ____|  \/  | ____/ ___|_ _/ ___|
+ |  \| |  _| | |\/| |  _| \___ \| |\___ \
+ | |\  | |___| |  | | |___ ___) | | ___) |
+ |_| \_|_____|_|  |_|_____|____/___|____/
+
+  version 0.1.0    GPS L1 C/A Signal Simulator
+  IS-GPS-200  |  Klobuchar Iono  |  Neill MF Tropo  |  WGS-84
+  Attacks: Meaconing  |  Slow Drift  |  Adversarial
+  https://github.com/kavishka-dot/nemesis-gnss-sim
+
+ [ephemeris]  embedded  —  31 SVs loaded
+ [visible]    16 satellites above 5.0° mask
+
+ PRN      El      Az        ρ (km)   Dopp (Hz)    Clk (m)  Iono (m)  Tropo (m)  Sagnac (m)
+ ──────────────────────────────────────────────────────────────────────────────────────────
+  24   68.74  337.06     20624.917    -1037.51    40.7704     3.105      2.486      4.4894
+   7   68.06    1.59     20413.493     1619.75  -178.8717     3.107      2.497     -0.3257
+  ...
+```
+
+---
+
+## Ephemeris Modes
+
+### Embedded (default)
+
+A built-in 31-SV almanac derived from IS-GPS-200 reference constellation parameters.
+
+- Zero setup — no files needed
+- Works fully offline and in Colab
+- Reproducible: same output for same parameters every time
+- Best for: training dataset generation, attack model development, quick experiments
+
+### RINEX
+
+Real GPS broadcast ephemeris loaded from a RINEX 2.11 or RINEX 3.x navigation file.
+When multiple records exist per PRN (files typically contain entries every 2 hours),
+the record closest to the requested GPS TOW is selected automatically.
+
+- Satellite positions accurate to ~1 m
+- Tied to a real calendar date
+- Best for: paper validation, hardware-in-the-loop testing, peer-review credibility
+
+**Getting a RINEX file:**
+```bash
+# IGS open mirror (no registration required)
+# https://igs.bkg.bund.de/root_ftp/IGS/BRDC/YYYY/DDD/
+# Example: day 120 of 2025
+# Download BRDC00IGS_R_20251200000_01D_MN.rnx.gz → extract → .rnx
+```
+
+```python
+# Inspect a RINEX file before using it
+from nemesis_sim import rinex_summary
+print(rinex_summary("BRDC00IGS_R_20251200000_01D_MN.rnx"))
+# {'path': '...', 'n_records': 312, 'prns': [1,2,...,32], 'healthy': 296, ...}
 ```
 
 ---
@@ -132,7 +228,6 @@ The pseudorange model follows IS-GPS-200 §20.3.3:
 
 ```bash
 python scripts/generate_dataset.py \
-    --locations scripts/locations.csv \
     --tow-start 388800 --tow-end 389800 --tow-step 100 \
     --attacks all \
     --duration-ms 1000 \
@@ -140,6 +235,7 @@ python scripts/generate_dataset.py \
 ```
 
 Produces a labeled dataset with a `manifest.json` for direct use with the NEMESIS training pipeline.
+Labels: `0=clearsky`, `1=meaconing`, `2=slow_drift`, `3=adversarial`.
 
 ---
 
@@ -149,8 +245,24 @@ Produces a labeled dataset with a `manifest.json` for direct use with the NEMESI
 pytest tests/ -v --cov=nemesis_sim
 ```
 
-Key test: `tests/test_propagator.py` validates SV positions against IS-GPS-200 Appendix II
-reference to < 1 mm.
+**78 tests** covering propagator physics, C/A code properties, atmospheric models,
+all three attack classes, RINEX 2/3 parsing, and end-to-end IQ generation.
+
+---
+
+## Comparison with gps-sdr-sim
+
+| Feature | [gps-sdr-sim](https://github.com/osqzss/gps-sdr-sim) | nemesis-gnss-sim |
+|---|---|---|
+| Language | C (compile required) | Pure Python, pip installable |
+| Ephemeris | RINEX only (required) | Embedded or RINEX (your choice) |
+| Spoofing attacks | None | Meaconing, Slow Drift, Adversarial |
+| Troposphere | Saastamoinen (fixed) | Neill MF + GPT (seasonal) |
+| Test suite | None | 78 tests |
+| Python API | None | Full `NEMESISSimulator` class |
+| Colab ready | No | Yes |
+| Labeled dataset generation | No | `scripts/generate_dataset.py` |
+| Maintenance | Archived | Active |
 
 ---
 
@@ -171,4 +283,4 @@ If you use this simulator in your research, please cite:
 
 ## License
 
-MIT: see [`LICENSE`](LICENSE).
+MIT — see [`LICENSE`](LICENSE).

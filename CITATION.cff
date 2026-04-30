@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-  - family-names: Gihan
+  - family-names: Abeywardana
     given-names: Kavishka
 title: "NEMESIS GNSS Simulator"
 version: 0.1.0

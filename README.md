@@ -1,5 +1,8 @@
 # NEMESIS GNSS Simulator
 
+<img width="2474" height="951" alt="image" src="https://github.com/user-attachments/assets/97a6d05a-fa5c-459b-8efe-21fc370f5eb0" />
+
+
 Geodetic-accuracy GPS L1 C/A signal simulator with physically rigorous spoofing attack models,
 built for the [NEMESIS](https://github.com/kavishka-dot) research pipeline.
 

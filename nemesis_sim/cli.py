@@ -84,6 +84,14 @@ def build_parser() -> argparse.ArgumentParser:
                      help="IQ duration (milliseconds)")
     sig.add_argument("--el-mask",  type=float, default=5.0,     metavar="DEG")
 
+    # Ephemeris
+    eph = p.add_argument_group("Ephemeris")
+    eph.add_argument("--ephemeris", default="embedded",
+                     choices=["embedded", "rinex"],
+                     help="Ephemeris source (default: embedded)")
+    eph.add_argument("--rinex-file", type=str, default=None, metavar="FILE",
+                     help="RINEX 2/3 navigation file (.nav/.rnx) — required when --ephemeris rinex")
+
     # Attack
     atk = p.add_argument_group("Attack")
     atk.add_argument("--attack", default="none",
@@ -116,6 +124,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     a = parser.parse_args(argv)
 
+    # ── Ephemeris source validation ──────────────────────────────────────
+    if a.ephemeris == "rinex" and not a.rinex_file:
+        parser.error("--rinex-file is required when --ephemeris rinex")
+
+    rinex_path = a.rinex_file if a.ephemeris == "rinex" else None
+
     sim = NEMESISSimulator(
         lat_deg     = a.lat,
         lon_deg     = a.lon,
@@ -125,13 +139,19 @@ def main(argv: list[str] | None = None) -> int:
         el_mask_deg = a.el_mask,
         fs          = a.fs,
         cn0_dbhz    = a.cn0,
+        rinex_path  = rinex_path,
     )
 
     truth = sim.compute_truth()
 
     # ── Print observation table ──────────────────────────────
     print(f"\n NEMESIS Simulator — {a.lat:.4f}°N  {a.lon:.4f}°E")
-    print(f" GPS TOW: {a.tow:.1f}s   DOY: {a.doy:.0f}   fs: {a.fs/1e6:.3f} MHz\n")
+    print(f" GPS TOW: {a.tow:.1f}s   DOY: {a.doy:.0f}   fs: {a.fs/1e6:.3f} MHz")
+    if a.ephemeris == "rinex":
+        print(f" [ephemeris]  rinex  —  {a.rinex_file}  —  {sim._ephem_n} SVs parsed")
+    else:
+        print(f" [ephemeris]  embedded  —  {sim._ephem_n} SVs loaded")
+    print(f" [visible]    {len(truth)} satellites above {a.el_mask:.1f}° mask\n")
     print(f" {'PRN':>3}  {'El':>6}  {'Az':>6}  {'ρ (km)':>12}  "
           f"{'Dopp (Hz)':>10}  {'Clk (m)':>9}  "
           f"{'Iono (m)':>8}  {'Tropo (m)':>9}  {'Sagnac (m)':>10}")
@@ -181,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
             save_int16(iq, a.out)
         else:
             save_cf32(iq, a.out)
+        print(f" [output]     {a.out}  —  {len(iq):,} samples ({len(iq)*4/1e6:.2f} MB)")
 
     return 0
 

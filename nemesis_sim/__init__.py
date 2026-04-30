@@ -17,6 +17,7 @@ from .attacks import AttackConfig, apply_attack, build_attack
 from .observations import SVObs, compute_observations
 from .io import save_int16, save_cf32, load_int16, load_cf32
 from .almanac import ALMANAC, SVEphemeris
+from .rinex import load_rinex, select_closest, rinex_summary
 from . import constants
 
 __version__ = "0.1.0"
@@ -35,6 +36,9 @@ __all__ = [
     "load_cf32",
     "ALMANAC",
     "SVEphemeris",
+    "load_rinex",
+    "select_closest",
+    "rinex_summary",
     "constants",
 ]
 

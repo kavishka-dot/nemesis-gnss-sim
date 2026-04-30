@@ -60,6 +60,8 @@ class NEMESISSimulator:
         cn0_dbhz: float = 45.0,
         user_vel: Optional[np.ndarray] = None,
         rng_seed: int = 42,
+        rinex_path: Optional[str] = None,
+        almanac: Optional[list] = None,
     ) -> None:
         self.lat         = lat_deg
         self.lon         = lon_deg
@@ -72,6 +74,23 @@ class NEMESISSimulator:
         self.user_vel    = user_vel if user_vel is not None else np.zeros(3)
         self.user_ecef   = lla_to_ecef(lat_deg, lon_deg, alt_m)
         self._rng        = np.random.default_rng(rng_seed)
+
+        # ── Ephemeris source ──────────────────────────────────────────
+        if rinex_path is not None:
+            from .rinex import load_rinex, select_closest
+            all_ephs = load_rinex(rinex_path)
+            self._almanac      = select_closest(all_ephs, gps_tow)
+            self._ephem_source = f"rinex:{rinex_path}"
+            self._ephem_n      = len(all_ephs)
+        elif almanac is not None:
+            self._almanac      = almanac
+            self._ephem_source = "custom"
+            self._ephem_n      = len(almanac)
+        else:
+            from .almanac import ALMANAC
+            self._almanac      = ALMANAC
+            self._ephem_source = "embedded"
+            self._ephem_n      = len(ALMANAC)
 
         self._truth_obs:  list[SVObs] | None = None
         self._attack_obs: list[SVObs] | None = None
@@ -95,6 +114,7 @@ class NEMESISSimulator:
             gps_tow     = self.tow,
             doy         = self.doy,
             el_mask_deg = self.el_mask,
+            almanac     = self._almanac,
         )
         self._attack_obs = None
         return self._truth_obs
@@ -173,6 +193,7 @@ class NEMESISSimulator:
         obs = (self._attack_obs if use_attacked else self._truth_obs) or []
         return {
             "location":  {"lat": self.lat, "lon": self.lon, "alt_m": self.alt},
+            "ephemeris": {"source": self._ephem_source, "n_svs": self._ephem_n},
             "gps_tow":   self.tow,
             "doy":       self.doy,
             "fs_mhz":    self.fs / 1e6,

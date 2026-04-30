@@ -3,6 +3,9 @@
 Geodetic-accuracy GPS L1 C/A signal simulator with physically rigorous spoofing attack models,
 built for the [NEMESIS](https://github.com/kavishka-dot) research pipeline.
 
+<img width="2469" height="969" alt="image" src="https://github.com/user-attachments/assets/fe480603-5cc7-473c-8912-a1e8df9c8372" />
+
+
 ```python
 from nemesis_sim import NEMESISSimulator, AttackConfig
 

@@ -37,3 +37,14 @@ __all__ = [
     "SVEphemeris",
     "constants",
 ]
+
+
+def _welcome() -> None:
+    """Print a short welcome line on import (Colab / notebook use)."""
+    import sys
+    if hasattr(sys, 'ps1') or 'ipykernel' in sys.modules:
+        # Interactive session or Jupyter
+        print(f"nemesis-sim {__version__} — GPS L1 C/A Simulator | "
+              f"github.com/kavishka-dot/nemesis-gnss-sim")
+
+_welcome()

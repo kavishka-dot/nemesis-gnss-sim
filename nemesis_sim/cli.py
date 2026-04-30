@@ -19,6 +19,25 @@ from .attacks import AttackConfig
 from .io import save_int16, save_cf32
 
 
+_BANNER = r"""
+  _   _ _____ __  __ _____ ____ ___ ____
+ | \ | | ____|  \/  | ____/ ___|_ _/ ___|
+ |  \| |  _| | |\/| |  _| \___ \| |\___ \
+ | |\  | |___| |  | | |___ ___) | | ___) |
+ |_| \_|_____|_|  |_|_____|____/___|____/
+"""
+
+def _print_banner() -> None:
+    from . import __version__
+    print(_BANNER)
+    print(f"  version {__version__}    GPS L1 C/A Signal Simulator")
+    print(f"  IS-GPS-200  |  Klobuchar Iono  |  Neill MF Tropo  |  WGS-84")
+    print(f"  Attacks: Meaconing  |  Slow Drift  |  Adversarial")
+    print(f"  https://github.com/kavishka-dot/nemesis-gnss-sim")
+    print()
+
+
+
 def _clean_argv(argv: list[str]) -> list[str]:
     """Strip Jupyter kernel connection args (-f /path/kernel-xxx.json)."""
     cleaned: list[str] = []
@@ -92,6 +111,7 @@ def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
     argv = _clean_argv(argv)
+    _print_banner()
 
     parser = build_parser()
     a = parser.parse_args(argv)
@@ -167,3 +187,21 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+_BANNER = r"""
+  _   _ _____ __  __ _____ ____ ___ ____
+ | \ | | ____|  \/  | ____/ ___|_ _/ ___|
+ |  \| |  _| | |\/| |  _| \___ \| |\___ \
+ | |\  | |___| |  | | |___ ___) | | ___) |
+ |_| \_|_____|_|  |_|_____|____/___|____/
+"""
+
+def _print_banner() -> None:
+    from . import __version__
+    print(_BANNER)
+    print(f"  version {__version__}    GPS L1 C/A Signal Simulator")
+    print(f"  IS-GPS-200  |  Klobuchar Iono  |  Neill MF Tropo  |  WGS-84")
+    print(f"  Attacks: Meaconing  |  Slow Drift  |  Adversarial")
+    print(f"  https://github.com/kavishka-dot/nemesis-gnss-sim")
+    print()

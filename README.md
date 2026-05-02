@@ -35,7 +35,7 @@ iq = sim.generate_iq(duration_ms=1000.0)   # complex128 at 4.092 MHz
 - Live visualization of visible satellites and synthesized baseband IQ
 - Direct browser download of generated signals as interleaved `.bin` files
 
-**Ephemeris sources — your choice**
+**Ephemeris sources - your choice**
 
 | Mode | How | When to use |
 |---|---|---|
@@ -189,7 +189,7 @@ nemesis-sim --lat 6.9271 --lon 79.8612 \
 
 A built-in 31-SV almanac derived from IS-GPS-200 reference constellation parameters.
 
-- Zero setup — no files needed
+- Zero setup, no files needed
 - Works fully offline and in Colab
 - Reproducible: same output for same parameters every time
 - Best for: training dataset generation, attack model development, quick experiments
@@ -300,4 +300,4 @@ If you use this simulator in your research, please cite:
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+MIT: see [`LICENSE`](LICENSE).

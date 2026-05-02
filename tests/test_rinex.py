@@ -197,6 +197,24 @@ class TestErrorHandling:
             load_rinex(path)
         path.unlink(missing_ok=True)
 
+class TestCompressedRinex:
+    def test_load_rinex_gz(self):
+        import gzip
+        path = _write_temp(_RINEX2_CONTENT, ".rnx")
+        gz_path = path.with_suffix(".gz")
+        
+        with open(path, "rb") as f_in:
+            with gzip.open(gz_path, "wb") as f_out:
+                f_out.write(f_in.read())
+                
+        ephs = load_rinex(gz_path)
+        assert len(ephs) == 2
+        assert ephs[0].prn == 1
+        
+        path.unlink(missing_ok=True)
+        gz_path.unlink(missing_ok=True)
+
+
 
 # ── Integration test: simulator accepts RINEX ─────────────────────────────────
 

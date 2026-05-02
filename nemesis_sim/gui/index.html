@@ -263,6 +263,38 @@
 
         <!-- Right Panel: Map -->
         <div class="right-panel">
+            <div class="glass-card" style="margin-bottom: 1rem; padding: 1rem 1.5rem;">
+                <div style="display: flex; gap: 2rem; align-items: flex-start;">
+                    <!-- Time Configuration -->
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; color: #475569;">Simulation Time</h3>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <select id="time-mode" style="padding: 0.4rem; border-radius: 6px; border: 1px solid var(--panel-border); font-family: inherit;">
+                                <option value="realtime">Real-Time</option>
+                                <option value="custom">Custom Date/Time</option>
+                            </select>
+                            <input type="datetime-local" id="custom-time" style="display: none; padding: 0.4rem; border-radius: 6px; border: 1px solid var(--panel-border); font-family: inherit;">
+                        </div>
+                    </div>
+                    
+                    <!-- Attack Configuration -->
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; color: #475569;">Spoofing Attack</h3>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                            <select id="attack-type" style="padding: 0.4rem; border-radius: 6px; border: 1px solid var(--panel-border); font-family: inherit;">
+                                <option value="none">None</option>
+                                <option value="meaconing">Meaconing</option>
+                                <option value="slow_drift">Slow Drift</option>
+                                <option value="adversarial">Adversarial</option>
+                            </select>
+                            <input type="number" id="attack-delay" placeholder="Delay (s)" value="0.0001" step="0.0001" style="display: none; width: 80px; padding: 0.4rem; border-radius: 6px; border: 1px solid var(--panel-border); font-family: inherit;">
+                            <input type="number" id="attack-drift" placeholder="Rate (m/s)" value="2.0" step="0.1" style="display: none; width: 80px; padding: 0.4rem; border-radius: 6px; border: 1px solid var(--panel-border); font-family: inherit;">
+                            <div id="adversarial-hint" style="display: none; font-size: 0.8rem; color: var(--logo-red); font-weight: 500;">Drag red marker to set false location</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="glass-card map-card">
                 <div class="controls-overlay">
                     <div class="coords" id="coords-display">Lat: 0.0000, Lon: 0.0000</div>
@@ -295,6 +327,27 @@
         let currentLon = 79.8612;
         let currentIqReal = [];
         let currentIqImag = [];
+
+        // Spoofing marker (red)
+        let spoofMarker = L.marker([6.9, 80.0], {
+            draggable: true,
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            })
+        });
+        let falseLat = 6.9;
+        let falseLon = 80.0;
+        
+        spoofMarker.on('dragend', function(e) {
+            falseLat = e.target.getLatLng().lat;
+            falseLon = e.target.getLatLng().lng;
+            document.getElementById('generate-btn').click();
+        });
 
         document.getElementById('coords-display').innerText = `Lat: ${currentLat.toFixed(4)}, Lon: ${currentLon.toFixed(4)}`;
 
@@ -358,10 +411,22 @@
             spinner.style.display = 'inline-block';
 
             try {
+                const payload = {
+                    lat: currentLat,
+                    lon: currentLon,
+                    time_mode: document.getElementById('time-mode').value,
+                    custom_time: document.getElementById('custom-time').value,
+                    attack_type: document.getElementById('attack-type').value,
+                    delay: parseFloat(document.getElementById('attack-delay').value),
+                    drift_rate: parseFloat(document.getElementById('attack-drift').value),
+                    false_lat: falseLat,
+                    false_lon: falseLon
+                };
+
                 const res = await fetch('/api/simulate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lat: currentLat, lon: currentLon })
+                    body: JSON.stringify(payload)
                 });
 
                 if (!res.ok) throw new Error('Simulation failed');
@@ -403,6 +468,32 @@
             } finally {
                 btn.disabled = false;
                 spinner.style.display = 'none';
+            }
+        });
+
+        // UI Event Listeners for Attack and Time panels
+        document.getElementById('time-mode').addEventListener('change', (e) => {
+            document.getElementById('custom-time').style.display = e.target.value === 'custom' ? 'block' : 'none';
+        });
+
+        document.getElementById('attack-type').addEventListener('change', (e) => {
+            const t = e.target.value;
+            document.getElementById('attack-delay').style.display = t === 'meaconing' ? 'block' : 'none';
+            document.getElementById('attack-drift').style.display = t === 'slow_drift' ? 'block' : 'none';
+            document.getElementById('adversarial-hint').style.display = t === 'adversarial' ? 'block' : 'none';
+            
+            if (t === 'adversarial') {
+                if (!map.hasLayer(spoofMarker)) {
+                    // Place spoof marker slightly offset from current true location
+                    falseLat = currentLat + 0.1;
+                    falseLon = currentLon + 0.1;
+                    spoofMarker.setLatLng([falseLat, falseLon]);
+                    spoofMarker.addTo(map);
+                }
+            } else {
+                if (map.hasLayer(spoofMarker)) {
+                    spoofMarker.remove();
+                }
             }
         });
 

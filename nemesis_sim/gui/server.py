@@ -52,24 +52,55 @@ class NemesisGUIHandler(http.server.SimpleHTTPRequestHandler):
                 lat = float(req.get("lat", 0.0))
                 lon = float(req.get("lon", 0.0))
 
+                time_mode = req.get("time_mode", "realtime")
+                custom_time = req.get("custom_time", "")
+                
+                from datetime import datetime, timezone
+                if time_mode == "realtime" or not custom_time:
+                    dt = datetime.now(timezone.utc)
+                else:
+                    try:
+                        dt = datetime.fromisoformat(custom_time.replace('Z', '+00:00'))
+                    except Exception:
+                        dt = datetime.now(timezone.utc)
+
+                doy = float(dt.timetuple().tm_yday)
+                days_since_sunday = (dt.weekday() + 1) % 7
+                gps_tow = days_since_sunday * 86400.0 + dt.hour * 3600 + dt.minute * 60 + dt.second + dt.microsecond / 1e6
+
                 # Default settings
                 sim = NEMESISSimulator(
                     lat_deg=lat,
                     lon_deg=lon,
                     alt_m=10.0,
-                    gps_tow=388800.0,
-                    # We use embedded to ensure it works instantly,
-                    # but could pass rinex if required.
+                    gps_tow=gps_tow,
+                    doy=doy
                 )
 
-                truth = sim.compute_truth()
+                sim.compute_truth()
 
-                # Generate 1ms of IQ data (so it returns fast to GUI)
-                iq = sim.generate_iq(duration_ms=1.0)
+                from nemesis_sim.attacks import AttackConfig
+                attack_type = req.get("attack_type", "none")
+                if attack_type != "none":
+                    if attack_type == "meaconing":
+                        cfg = AttackConfig("meaconing", meaconing_delay_s=float(req.get("delay", 1e-4)))
+                    elif attack_type == "slow_drift":
+                        cfg = AttackConfig("slow_drift", drift_rate_m_s=float(req.get("drift_rate", 2.0)), drift_start_s=gps_tow)
+                    elif attack_type == "adversarial":
+                        cfg = AttackConfig("adversarial", false_lat=float(req.get("false_lat", lat)), false_lon=float(req.get("false_lon", lon)), false_alt=10.0)
+                    else:
+                        cfg = AttackConfig("none")
+                    
+                    if cfg.attack_type != "none":
+                        sim.apply_attack(cfg)
+
+                # Generate 1ms of IQ data
+                iq = sim.generate_iq(duration_ms=1.0, use_attacked=(attack_type != "none"))
 
                 # Prepare JSON response
+                obs_list = sim._attack_obs if (attack_type != "none" and sim._attack_obs is not None) else sim._truth_obs
                 satellites = []
-                for sv in truth:
+                for sv in obs_list:
                     satellites.append({
                         "prn": sv.prn,
                         "el_deg": round(sv.el_deg, 2),
@@ -77,7 +108,7 @@ class NemesisGUIHandler(http.server.SimpleHTTPRequestHandler):
                         "doppler_hz": round(sv.doppler_hz, 2)
                     })
 
-                # Downsample IQ for plotting if needed (4092 samples is fine for Chart.js though)
+                # Downsample IQ for plotting
                 iq_real = iq.real.tolist()
                 iq_imag = iq.imag.tolist()
 

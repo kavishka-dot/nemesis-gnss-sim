@@ -27,6 +27,13 @@ iq = sim.generate_iq(duration_ms=1000.0)   # complex128 at 4.092 MHz
 - Neill Mapping Function troposphere + GPT standard atmosphere (seasonal, latitude-dependent)
 - Correct C/A Gold code generation for all 32 PRNs (IS-GPS-200 Table 3-Ia)
 - BPSK(1) baseband IQ synthesis at arbitrary sample rate
+- Transparent RINEX navigation file support (natively handles `.rnx`, `.gz`, and `.7z`)
+
+**Interactive Web GUI**
+- Launch a local lightweight map-based UI with `nemesis-sim --gui`
+- Click anywhere on the globe to generate RF signals instantly
+- Live visualization of visible satellites and synthesized baseband IQ
+- Direct browser download of generated signals as interleaved `.bin` files
 
 **Ephemeris sources — your choice**
 
@@ -120,7 +127,14 @@ iq = sim.generate_iq(duration_ms=1000.0)
 ## CLI
 
 ```bash
+<<<<<<< Updated upstream
 # Embedded mode (default)
+=======
+# Launch Interactive Web GUI
+nemesis-sim --gui
+
+# Clearsky
+>>>>>>> Stashed changes
 nemesis-sim --lat 6.9271 --lon 79.8612 --out clearsky.bin
 
 # RINEX mode

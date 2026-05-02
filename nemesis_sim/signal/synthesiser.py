@@ -15,9 +15,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from .ca_code import get_ca_code
-from ..constants import C, L1_FREQ, CA_CHIP_RATE, CA_CODE_LEN, NAV_BIT_RATE, PI
+from ..constants import CA_CHIP_RATE, CA_CODE_LEN, L1_FREQ, NAV_BIT_RATE, PI, C
 from ..observations import SVObs
+from .ca_code import get_ca_code
 
 
 def synthesise_iq(
@@ -57,7 +57,7 @@ def synthesise_iq(
     chips_per_sample = CA_CHIP_RATE / fs
 
     for sv in obs:
-        ca = get_ca_code(sv.prn).astype(np.float64)
+        ca: np.ndarray = get_ca_code(sv.prn).astype(np.float64)
 
         # Code phase at start of epoch (chips, mod 1023)
         code_phase = (sv.pseudorange_m / C) * CA_CHIP_RATE % CA_CODE_LEN

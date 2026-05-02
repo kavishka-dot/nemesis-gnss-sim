@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..constants import C, PI
+from ..constants import PI, C
 
 # GPT standard atmosphere at reference latitudes (5° grid)
 _GPT_LAT = np.radians([15.0, 30.0, 45.0, 60.0, 75.0])

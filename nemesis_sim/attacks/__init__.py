@@ -9,13 +9,13 @@ Three attack classes matching the NEMESIS paper taxonomy:
 
 from __future__ import annotations
 
+import numpy as np
+
+from ..observations import SVObs
+from .adversarial import AdversarialAttack
 from .base import AttackConfig, BaseAttack
 from .meaconing import MeaconingAttack
 from .slow_drift import SlowDriftAttack
-from .adversarial import AdversarialAttack
-from ..observations import SVObs
-
-import numpy as np
 
 _REGISTRY: dict[str, type[BaseAttack]] = {
     "meaconing":  MeaconingAttack,

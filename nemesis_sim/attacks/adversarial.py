@@ -19,9 +19,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from .base import BaseAttack, AttackConfig
 from ..observations import SVObs, compute_observations
 from ..propagator.transforms import lla_to_ecef
+from .base import BaseAttack
 
 
 class AdversarialAttack(BaseAttack):

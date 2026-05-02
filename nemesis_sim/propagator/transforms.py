@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..constants import WGS84_A, WGS84_E2, WGS84_B, OMEGA_E, PI
+from ..constants import OMEGA_E, WGS84_A, WGS84_E2
 
 
 def lla_to_ecef(lat_deg: float, lon_deg: float, alt_m: float) -> np.ndarray:

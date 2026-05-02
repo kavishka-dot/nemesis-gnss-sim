@@ -17,10 +17,9 @@ Units: SI throughout
 
 from __future__ import annotations
 
-import numpy as np
 from dataclasses import dataclass
 
-from .constants import WGS84_A, MU, OMEGA_E, PI
+import numpy as np
 
 
 @dataclass(frozen=True)

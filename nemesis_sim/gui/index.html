@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEMESIS GNSS Simulator</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --panel-bg: rgba(255, 255, 255, 0.7);
+            --panel-border: rgba(0, 0, 0, 0.1);
+            --text: #1e293b;
+            
+            /* Logo Palette */
+            --logo-red: #ea0b2a;
+            --logo-blue: #0f6cfa;
+            --logo-orange: #ff8200;
+            --logo-pink: #eb297a;
+            --logo-purple: #7a3ee8;
+            --logo-green: #2fb14d;
+            
+            /* Primary UI Accent */
+            --accent: var(--logo-blue);
+            --accent-hover: #0d5bd6;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, sans-serif;
+            font-weight: 300;
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 1rem 2rem;
+            background: rgba(255, 255, 255, 0.8);
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, #2563eb, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            padding: 1rem;
+            gap: 1rem;
+            height: calc(100vh - 70px);
+            box-sizing: border-box;
+        }
+
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-width: 450px;
+        }
+
+        .right-panel {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .glass-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 1rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .satellites-card {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .iq-card {
+            flex: 1;
+            min-height: 300px;
+        }
+
+        .map-card {
+            flex: 1;
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            background: #e2e8f0;
+        }
+
+        h2 {
+            margin: 0 0 1rem 0;
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: #475569;
+        }
+
+        .table-container {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        th {
+            color: #64748b;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+        }
+
+        tr:hover td {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .controls-overlay {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0.75rem 1.5rem;
+            border-radius: 20px;
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(10px);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .coords {
+            font-family: monospace;
+            font-size: 1rem;
+            color: #475569;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="logo.png" alt="Nemesis Logo" style="height: 65px; width: auto;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="font-size: 0.9rem; color: #64748b; font-weight: 300;">Interactive RF Generator</div>
+            <button id="download-btn" disabled style="padding: 0.4rem 1rem; font-size: 0.85rem; background: var(--logo-blue);">Download .bin</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Left Panel: Satellites & IQ -->
+        <div class="left-panel">
+            <div class="glass-card satellites-card">
+                <h2>Visible Satellites <span id="sv-count" style="float:right; color:var(--logo-blue); font-weight:500;">0</span></h2>
+                <div class="table-container">
+                    <table id="sv-table">
+                        <thead>
+                            <tr>
+                                <th>PRN</th>
+                                <th>Elev (°)</th>
+                                <th>Azim (°)</th>
+                                <th>Dopp (Hz)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:2rem; font-weight: 300;">Click on the map to generate</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="glass-card iq-card">
+                <h2>Baseband IQ Signal (1 ms)</h2>
+                <div style="flex:1; position:relative;">
+                    <canvas id="iqChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Map -->
+        <div class="right-panel">
+            <div class="glass-card map-card">
+                <div class="controls-overlay">
+                    <div class="coords" id="coords-display">Lat: 0.0000, Lon: 0.0000</div>
+                    <button id="generate-btn">
+                        Generate IQ
+                        <div class="loading" id="loading-spinner"></div>
+                    </button>
+                </div>
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    
+    <script>
+        // Initialize Map
+        const map = L.map('map').setView([6.9271, 79.8612], 4);
+        
+        // Use CartoDB Voyager for Light, Full-English Map
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        let marker = L.marker([6.9271, 79.8612]).addTo(map);
+        let currentLat = 6.9271;
+        let currentLon = 79.8612;
+        let currentIqReal = [];
+        let currentIqImag = [];
+
+        document.getElementById('coords-display').innerText = `Lat: ${currentLat.toFixed(4)}, Lon: ${currentLon.toFixed(4)}`;
+
+        // Map Click Event
+        map.on('click', function(e) {
+            currentLat = e.latlng.lat;
+            currentLon = e.latlng.lng;
+            marker.setLatLng(e.latlng);
+            document.getElementById('coords-display').innerText = `Lat: ${currentLat.toFixed(4)}, Lon: ${currentLon.toFixed(4)}`;
+        });
+
+        // Initialize Chart
+        const ctx = document.getElementById('iqChart').getContext('2d');
+        const iqChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 500}, (_, i) => i),
+                datasets: [
+                    {
+                        label: 'I Channel',
+                        borderColor: '#0f6cfa',
+                        backgroundColor: '#0f6cfa',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        data: []
+                    },
+                    {
+                        label: 'Q Channel',
+                        borderColor: '#eb297a',
+                        backgroundColor: '#eb297a',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        data: []
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { labels: { color: '#475569', font: { weight: 300 } } }
+                },
+                scales: {
+                    x: { display: false },
+                    y: {
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { color: '#64748b' }
+                    }
+                }
+            }
+        });
+
+        // Generate Button Logic
+        document.getElementById('generate-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('generate-btn');
+            const spinner = document.getElementById('loading-spinner');
+            const tbody = document.querySelector('#sv-table tbody');
+            
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+
+            try {
+                const res = await fetch('/api/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lat: currentLat, lon: currentLon })
+                });
+
+                if (!res.ok) throw new Error('Simulation failed');
+                
+                const data = await res.json();
+
+                // Update Table
+                document.getElementById('sv-count').innerText = data.satellites.length;
+                tbody.innerHTML = '';
+                if (data.satellites.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; font-weight:300;">No visible satellites</td></tr>';
+                } else {
+                    data.satellites.forEach(sv => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>G${sv.prn.toString().padStart(2, '0')}</td>
+                            <td>${sv.el_deg.toFixed(1)}</td>
+                            <td>${sv.az_deg.toFixed(1)}</td>
+                            <td>${sv.doppler_hz.toFixed(1)}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                // Update Chart (slice first 500 samples for performance)
+                const sliceLen = Math.min(500, data.iq_real.length);
+                iqChart.data.labels = Array.from({length: sliceLen}, (_, i) => i);
+                iqChart.data.datasets[0].data = data.iq_real.slice(0, sliceLen);
+                iqChart.data.datasets[1].data = data.iq_imag.slice(0, sliceLen);
+                iqChart.update();
+
+                // Store for download
+                currentIqReal = data.iq_real;
+                currentIqImag = data.iq_imag;
+                document.getElementById('download-btn').disabled = false;
+
+            } catch (err) {
+                alert('Error generating data: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+            }
+        });
+
+        // Auto-trigger initial generation
+        setTimeout(() => document.getElementById('generate-btn').click(), 500);
+
+        // Download Button Logic
+        document.getElementById('download-btn').addEventListener('click', () => {
+            if (!currentIqReal.length) return;
+            
+            const scale = 2047.0;
+            const buf = new Int16Array(currentIqReal.length * 2);
+            for (let i = 0; i < currentIqReal.length; i++) {
+                let r = Math.round(Math.max(-32768, Math.min(32767, currentIqReal[i] * scale)));
+                let c = Math.round(Math.max(-32768, Math.min(32767, currentIqImag[i] * scale)));
+                buf[i * 2] = r;
+                buf[i * 2 + 1] = c;
+            }
+            
+            const blob = new Blob([buf], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `nemesis_iq_${currentLat.toFixed(4)}_${currentLon.toFixed(4)}.bin`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>

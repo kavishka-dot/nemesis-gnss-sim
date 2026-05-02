@@ -19,9 +19,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from .base import BaseAttack, AttackConfig
-from ..observations import SVObs
 from ..constants import C
+from ..observations import SVObs
+from .base import BaseAttack
 
 
 class MeaconingAttack(BaseAttack):

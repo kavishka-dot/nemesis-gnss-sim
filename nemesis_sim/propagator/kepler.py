@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..constants import MU, OMEGA_E, HALF_WEEK
 from ..almanac import SVEphemeris
+from ..constants import HALF_WEEK, MU, OMEGA_E
 
 # Maximum Kepler iteration tolerance
 _KEPLER_TOL: float = 1e-14

@@ -16,9 +16,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from .base import BaseAttack, AttackConfig
+from ..constants import L1_FREQ, C
 from ..observations import SVObs
-from ..constants import C, L1_FREQ
+from .base import BaseAttack
 
 
 class SlowDriftAttack(BaseAttack):

@@ -12,13 +12,13 @@ load_int16        : load int16 IQ file
 load_cf32         : load float32 IQ file
 """
 
-from .simulator import NEMESISSimulator
-from .attacks import AttackConfig, apply_attack, build_attack
-from .observations import SVObs, compute_observations
-from .io import save_int16, save_cf32, load_int16, load_cf32
-from .almanac import ALMANAC, SVEphemeris
-from .rinex import load_rinex, select_closest, rinex_summary
 from . import constants
+from .almanac import ALMANAC, SVEphemeris
+from .attacks import AttackConfig, apply_attack, build_attack
+from .io import load_cf32, load_int16, save_cf32, save_int16
+from .observations import SVObs, compute_observations
+from .rinex import load_rinex, rinex_summary, select_closest
+from .simulator import NEMESISSimulator
 
 __version__ = "0.1.0"
 __author__  = "Kavishka Gihan"

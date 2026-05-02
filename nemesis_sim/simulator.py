@@ -17,17 +17,14 @@ Example
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import Optional
 
 import numpy as np
 
-from .constants import C, L1_FREQ
-from .almanac import SVEphemeris, ALMANAC
-from .observations import SVObs, compute_observations
 from .attacks import AttackConfig, apply_attack
-from .signal.synthesiser import synthesise_iq
+from .observations import SVObs, compute_observations
 from .propagator.transforms import lla_to_ecef
+from .signal.synthesiser import synthesise_iq
 
 
 class NEMESISSimulator:

@@ -14,10 +14,9 @@ import sys
 
 import numpy as np
 
-from .simulator import NEMESISSimulator
 from .attacks import AttackConfig
-from .io import save_int16, save_cf32
-
+from .io import save_cf32, save_int16
+from .simulator import NEMESISSimulator
 
 _BANNER = r"""
   _   _ _____ __  __ _____ ____ ___ ____
@@ -31,9 +30,9 @@ def _print_banner() -> None:
     from . import __version__
     print(_BANNER)
     print(f"  version {__version__}    GPS L1 C/A Signal Simulator")
-    print(f"  IS-GPS-200  |  Klobuchar Iono  |  Neill MF Tropo  |  WGS-84")
-    print(f"  Attacks: Meaconing  |  Slow Drift  |  Adversarial")
-    print(f"  https://github.com/kavishka-dot/nemesis-gnss-sim")
+    print("  IS-GPS-200  |  Klobuchar Iono  |  Neill MF Tropo  |  WGS-84")
+    print("  Attacks: Meaconing  |  Slow Drift  |  Adversarial")
+    print("  https://github.com/kavishka-dot/nemesis-gnss-sim")
     print()
 
 
@@ -112,6 +111,11 @@ def build_parser() -> argparse.ArgumentParser:
     out.add_argument("--no-noise", action="store_true",
                      help="Disable AWGN")
 
+    # GUI
+    gui = p.add_argument_group("GUI")
+    gui.add_argument("--gui", action="store_true",
+                     help="Launch interactive web GUI")
+
     return p
 
 
@@ -123,6 +127,11 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = build_parser()
     a = parser.parse_args(argv)
+
+    if a.gui:
+        from .gui.server import run_gui
+        run_gui()
+        return 0
 
     # ── Ephemeris source validation ──────────────────────────────────────
     if a.ephemeris == "rinex" and not a.rinex_file:
@@ -210,19 +219,4 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 
-_BANNER = r"""
-  _   _ _____ __  __ _____ ____ ___ ____
- | \ | | ____|  \/  | ____/ ___|_ _/ ___|
- |  \| |  _| | |\/| |  _| \___ \| |\___ \
- | |\  | |___| |  | | |___ ___) | | ___) |
- |_| \_|_____|_|  |_|_____|____/___|____/
-"""
 
-def _print_banner() -> None:
-    from . import __version__
-    print(_BANNER)
-    print(f"  version {__version__}    GPS L1 C/A Signal Simulator")
-    print(f"  IS-GPS-200  |  Klobuchar Iono  |  Neill MF Tropo  |  WGS-84")
-    print(f"  Attacks: Meaconing  |  Slow Drift  |  Adversarial")
-    print(f"  https://github.com/kavishka-dot/nemesis-gnss-sim")
-    print()

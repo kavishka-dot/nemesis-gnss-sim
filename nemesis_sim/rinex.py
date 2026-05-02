@@ -21,12 +21,9 @@ Usage
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
-from typing import TextIO
 
 from .almanac import SVEphemeris
-
 
 # ── RINEX field parser ────────────────────────────────────────────────────────
 
@@ -207,8 +204,13 @@ def load_rinex(path: str | Path) -> list[SVEphemeris]:
     if not path.exists():
         raise FileNotFoundError(f"RINEX file not found: {path}")
 
-    with open(path, "r", encoding="utf-8", errors="replace") as f:
-        raw = f.read()
+    if path.suffix == ".gz":
+        import gzip
+        with gzip.open(path, "rt", encoding="utf-8", errors="replace") as f:
+            raw = f.read()
+    else:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            raw = f.read()
 
     lines = raw.splitlines()
     if not lines:

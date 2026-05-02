@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..constants import MU, F_REL, HALF_WEEK
 from ..almanac import SVEphemeris
+from ..constants import F_REL, HALF_WEEK, MU
 
 
 def sv_clock_correction(eph: SVEphemeris, gps_tow: float) -> float:

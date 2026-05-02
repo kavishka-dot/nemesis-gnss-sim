@@ -14,13 +14,13 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .constants import C, L1_FREQ, OMEGA_E
-from .almanac import SVEphemeris, ALMANAC
-from .propagator.kepler import sv_position_velocity
-from .propagator.clock import sv_clock_correction
-from .propagator.transforms import elevation_azimuth, rotate_ecef_sagnac, sagnac_correction
+from .almanac import ALMANAC, SVEphemeris
 from .atmosphere.klobuchar import ionospheric_delay_m
 from .atmosphere.troposphere import tropospheric_delay_m
+from .constants import L1_FREQ, C
+from .propagator.clock import sv_clock_correction
+from .propagator.kepler import sv_position_velocity
+from .propagator.transforms import elevation_azimuth, rotate_ecef_sagnac, sagnac_correction
 
 
 @dataclass

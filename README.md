@@ -289,7 +289,7 @@ If you use this simulator in your research, please cite:
 
 ```bibtex
 @software{nemesis_gnss_sim,
-  author  = {Kavishka Gihan},
+  author  = {Kavishka Abeywardana},
   title   = {{NEMESIS GNSS Simulator}},
   year    = {2025},
   url     = {https://github.com/kavishka-dot/nemesis-gnss-sim},
